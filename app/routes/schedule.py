@@ -14,13 +14,13 @@ def ref_date(date: datetime.datetime, time):
 
 
 def with_subgroup(lesson, subgroup=1):
-    return lesson.get('subgroups')[subgroup - 1] if lesson.get('subgroups') else lesson.get('forAll')
+    return lesson.get('subgroups')[subgroup - 1] if lesson.get('subgroups') else lesson.get('forAll') or {}
 
 
 def voice_processing(lessons, subgroup=1):
     return '. '.join([
                          f'В {lesson.get("startTime")} будет {with_subgroup(lesson, subgroup).get("name")} у {with_subgroup(lesson, subgroup).get("teacher")} {with_subgroup(lesson, subgroup).get("location")}'
-                         for number, lesson in zip(list(range(lessons)), lessons)])
+                         for number, lesson in zip(list(range(len(lessons))), lessons)])
 
 
 @app.route('/schedule', methods=['POST'])
@@ -54,13 +54,13 @@ def schedule_handler():
         today_diff = 1
     else:
         when = {
-            'понедельник': 1 - datetime.datetime.today().isocalendar().weekday,
-            'вторник': 2 - datetime.datetime.today().isocalendar().weekday,
-            'сред': 3 - datetime.datetime.today().isocalendar().weekday,
-            'четверг': 4 - datetime.datetime.today().isocalendar().weekday,
-            'пятниц': 5 - datetime.datetime.today().isocalendar().weekday,
-            'суббот': 6 - datetime.datetime.today().isocalendar().weekday,
-            'воскресен': 7 - datetime.datetime.today().isocalendar().weekday,
+            'понедельник': 1 - datetime.datetime.today().isocalendar()[2],
+            'вторник': 2 - datetime.datetime.today().isocalendar()[2],
+            'сред': 3 - datetime.datetime.today().isocalendar()[2],
+            'четверг': 4 - datetime.datetime.today().isocalendar()[2],
+            'пятниц': 5 - datetime.datetime.today().isocalendar()[2],
+            'суббот': 6 - datetime.datetime.today().isocalendar()[2],
+            'воскресен': 7 - datetime.datetime.today().isocalendar()[2],
             'завтра': 1,
             'послезавтра': 2,
             'вчера': -1,
@@ -73,11 +73,11 @@ def schedule_handler():
         today_diff = today_diffs[0] if len(today_diffs) else 0
 
     needed_date = datetime.datetime.now() + datetime.timedelta(days=today_diff)
-    week = 'odd' if needed_date.isocalendar().week % 2 else 'even'
+    week = 'odd' if needed_date.isocalendar()[1] % 2 else 'even'
 
     group: models.EducationalGroup = models.EducationalGroup.get_with_id(1)
     week_schedule = group.schedule.get(week) if group.schedule.get(week) else group.schedule.get('invariably')
-    day_schedule = week_schedule[needed_date.isocalendar().weekday - 1]
+    day_schedule = week_schedule[needed_date.isocalendar()[2] - 1]
     time_ranges = {number + 1: {'startTime': ref_date(needed_date, lesson.get('startTime')),
                                 'endTime': ref_date(needed_date, lesson.get('endTime'))} for number, lesson in
                    zip(range(len(day_schedule)), day_schedule)}
