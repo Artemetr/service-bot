@@ -25,11 +25,11 @@ def voice_message(lesson, subgroup=1):
     else:
         result += 'свободное время'
 
-    return result
+    return result + '.'
 
 
 def voice_processing(lessons, subgroup=1):
-    return '. '.join([voice_message(lesson, subgroup) for number, lesson in zip(list(range(len(lessons))), lessons)])
+    return '\n'.join([voice_message(lesson, subgroup) for number, lesson in zip(list(range(len(lessons))), lessons)])
 
 
 @app.route('/schedule', methods=['POST'])
