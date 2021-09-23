@@ -17,10 +17,19 @@ def with_subgroup(lesson, subgroup=1):
     return lesson.get('subgroups')[subgroup - 1] if lesson.get('subgroups') else lesson.get('forAll') or {}
 
 
+def voice_message(lesson, subgroup=1):
+    lesson_data = with_subgroup(lesson, subgroup)
+    result = f'В {lesson.get("startTime")} будет '
+    if lesson_data:
+        result += f'{lesson_data.get("name")} у {lesson_data.get("teacher")} {lesson_data.get("location")}'
+    else:
+        result += 'свободное время'
+
+    return result
+
+
 def voice_processing(lessons, subgroup=1):
-    return '. '.join([
-                         f'В {lesson.get("startTime")} будет {with_subgroup(lesson, subgroup).get("name")} у {with_subgroup(lesson, subgroup).get("teacher")} {with_subgroup(lesson, subgroup).get("location")}'
-                         for number, lesson in zip(list(range(len(lessons))), lessons)])
+    return '. '.join([voice_message(lesson, subgroup) for number, lesson in zip(list(range(len(lessons))), lessons)])
 
 
 @app.route('/schedule', methods=['POST'])
@@ -98,7 +107,17 @@ def schedule_handler():
             'сед': 7,
             'восьм': 8,
             'дев': 9,
-            'дес': 10
+            'дес': 10,
+            '1': 1,
+            '2': 2,
+            '3': 3,
+            '4': 4,
+            '5': 5,
+            '6': 6,
+            '7': 7,
+            '8': 8,
+            '9': 9,
+            '10': 10
         }
         number = int(min([value for key, value in numbers.items() if re.findall(key, user_phrase)] or [0]))
 
