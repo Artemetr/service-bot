@@ -1,0 +1,5 @@
+from lib.schedule.models.educational_group import EducationalGroup
+from lib.schedule.models.educational_institution import EducationalInstitution
+from lib.schedule.models.educational_institution_alias import EducationalInstitutionAlias
+from lib.schedule.models.educational_institution_type import EducationalInstitutionType
+from lib.schedule.models.yandex_user import YandexUser
