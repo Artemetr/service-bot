@@ -1,4 +1,6 @@
+import json
 import re
+import sys
 
 import requests
 from bs4 import BeautifulSoup
@@ -43,13 +45,16 @@ def parse_week(tbody):
     return result
 
 
-if __name__ == '__main__':
+def parse(url):
     soup = BeautifulSoup(
-        requests.get('https://www.tyuiu.ru/shedule_new/bin/groups.py?act=show&print=&sgroup=5444').content.decode(
-            'koi8-r'), 'lxml')
+        requests.get(url).content.decode('koi8-r'), 'lxml')
 
     tbodies = soup.select('tbody')
-    print({
+    return {
         'odd': parse_week(tbodies[0]),
         'even': parse_week(tbodies[1])
-    })
+    }
+
+
+if __name__ == '__main__':
+    print(json.dumps(parse(sys.argv[1])))
