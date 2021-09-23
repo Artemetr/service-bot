@@ -70,10 +70,10 @@ def schedule_handler():
             'пятниц': 5 - datetime.datetime.today().isocalendar()[2],
             'суббот': 6 - datetime.datetime.today().isocalendar()[2],
             'воскресен': 7 - datetime.datetime.today().isocalendar()[2],
-            'завтра': 1,
             'послезавтра': 2,
-            'вчера': -1,
+            'завтра': 1,
             'позавчера': -2,
+            'вчера': -1,
             'сегодня': 0,
         }
 
