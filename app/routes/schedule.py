@@ -2,29 +2,7 @@ import json
 
 from flask import request
 
-from app import app
-
-schedule_mock = {
-    'ТИУ': {
-        'АСОиУб 18 1': {
-            'нечетная': {
-                'понедельник': [
-                    {
-                        'все': {
-                            'время начала': '10:30',
-                            'время окончания': '10:30',
-                            'название': 'Название предмета',
-                            'преподаватель': 'Лаптева У. В.'
-                        }
-                    }
-                ]
-            },
-            'четная': {
-
-            }
-        }
-    }
-}
+from app import app, db, DbBinds
 
 
 @app.route('/schedule', methods=['POST'])
