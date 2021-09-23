@@ -28,7 +28,6 @@ def schedule():
         'расписание'
     ]:
         response['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
-        return
 
     return json.dumps(
         response,
