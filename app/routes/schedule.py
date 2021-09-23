@@ -1,33 +1,113 @@
 import json
+import re
+import datetime
 
 from flask import request
 
-from app import app, db, DbBinds
+from app import app
+from lib.schedule import models
+
+
+def ref_date(date: datetime.datetime, time):
+    [hour, minute] = re.findall(r'(\d+):(\d+)', time)[0]
+    return datetime.datetime(date.year, date.month, date.day, int(hour), int(minute))
+
+
+def with_subgroup(lesson, subgroup=1):
+    return lesson.get('subgroups')[subgroup - 1] if lesson.get('subgroups') else lesson.get('forAll')
+
+
+def voice_processing(lessons, subgroup=1):
+    return '. '.join([
+                         f'В {lesson.get("startTime")} будет {with_subgroup(lesson, subgroup).get("name")} у {with_subgroup(lesson, subgroup).get("teacher")} {with_subgroup(lesson, subgroup).get("location")}'
+                         for number, lesson in zip(list(range(lessons)), lessons)])
 
 
 @app.route('/schedule', methods=['POST'])
-def schedule():
+def schedule_handler():
     response = {
         'version': request.json['version'],
         'session': request.json['session'],
         'response': {
             'end_session': False,
             'text': 'Some text',
-            'buttons': [
-                {
-                    "title": "Ладно",
-                    "url": "https://market.yandex.ru/search?text=слон",
-                    "hide": True
-                }
-            ]
+            # 'buttons': [
+            #     {
+            #         "title": "Ладно",
+            #         "url": "https://market.yandex.ru/search?text=слон",
+            #         "hide": True
+            #     }
+            # ]
         }
     }
 
-    if request.json['request']['original_utterance'].lower() in [
-        'какое расписание',
-        'расписание'
-    ]:
-        response['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
+    print(request.json)
+    user_phrase = request.json['request']['original_utterance'].lower()
+    if not user_phrase:
+        return json.dumps(
+            response,
+            ensure_ascii=False,
+            indent=2
+        )
+
+    if re.findall('следующий день', user_phrase):
+        today_diff = 1
+    else:
+        when = {
+            'понедельник': 1 - datetime.datetime.today().isocalendar().weekday,
+            'вторник': 2 - datetime.datetime.today().isocalendar().weekday,
+            'сред': 3 - datetime.datetime.today().isocalendar().weekday,
+            'четверг': 4 - datetime.datetime.today().isocalendar().weekday,
+            'пятниц': 5 - datetime.datetime.today().isocalendar().weekday,
+            'суббот': 6 - datetime.datetime.today().isocalendar().weekday,
+            'воскресен': 7 - datetime.datetime.today().isocalendar().weekday,
+            'завтра': 1,
+            'послезавтра': 2,
+            'вчера': -1,
+            'позавчера': -2,
+            'сегодня': 0,
+        }
+
+        today_diffs = [value + 7 if re.findall(f'ий {key}', user_phrase) else value for key, value in when.items() if
+                       re.findall(key, user_phrase)]
+        today_diff = today_diffs[0] if len(today_diffs) else 0
+
+    needed_date = datetime.datetime.now() + datetime.timedelta(days=today_diff)
+    week = 'odd' if needed_date.isocalendar().week % 2 else 'even'
+
+    group: models.EducationalGroup = models.EducationalGroup.get_with_id(1)
+    week_schedule = group.schedule.get(week) if group.schedule.get(week) else group.schedule.get('invariably')
+    day_schedule = week_schedule[needed_date.isocalendar().weekday - 1]
+    time_ranges = {number + 1: {'startTime': ref_date(needed_date, lesson.get('startTime')),
+                                'endTime': ref_date(needed_date, lesson.get('endTime'))} for number, lesson in
+                   zip(range(len(day_schedule)), day_schedule)}
+
+    if re.findall(r'следующ(ий|ая|ее) (пара|урок|лекция|практика|занятие)', user_phrase):
+        number = int(min([key for key, value in time_ranges.items() if value.get('startTime') > needed_date] or [0]))
+        number = number + 1 if number else number
+    elif re.findall(r'пара|урок|лекция|практика|занятие', user_phrase):
+        number = int(min([key for key, value in time_ranges.items() if value.get('startTime') > needed_date] or [0]))
+    else:
+        numbers = {
+            'перв': 1,
+            'втор': 2,
+            'трет': 3,
+            'четвё': 4,
+            'пятая|пятый': 5,
+            'шест': 6,
+            'сед': 7,
+            'восьм': 8,
+            'дев': 9,
+            'дес': 10
+        }
+        number = int(min([value for key, value in numbers.items() if re.findall(key, user_phrase)] or [0]))
+
+    if number:
+        lessons = [day_schedule[number]]
+    else:
+        lessons = day_schedule
+
+    response['response']['text'] = voice_processing(lessons, 1)
 
     return json.dumps(
         response,
