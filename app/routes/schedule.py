@@ -19,13 +19,7 @@ def with_subgroup(lesson, subgroup=1):
 
 def voice_message(lesson, subgroup=1):
     lesson_data = with_subgroup(lesson, subgroup)
-    result = f'В {lesson.get("startTime")} будет '
-    if lesson_data:
-        result += f'{lesson_data.get("name")} у {lesson_data.get("teacher")} {lesson_data.get("location")}'
-    else:
-        result += 'свободное время'
-
-    return result + '.'
+    return f'В {lesson.get("startTime")} будет {lesson_data.get("name")} у {lesson_data.get("teacher")} {lesson_data.get("location")}.' if lesson_data else ''
 
 
 def voice_processing(lessons, subgroup=1):
