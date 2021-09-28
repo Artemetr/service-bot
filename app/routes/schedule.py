@@ -23,7 +23,7 @@ def voice_message(lesson, subgroup=1):
 
 
 def voice_processing(lessons, subgroup=1):
-    return '\n'.join([voice_message(lesson, subgroup) for number, lesson in zip(list(range(len(lessons))), lessons)])
+    return '\n'.join([i for i in [voice_message(lesson, subgroup) for number, lesson in zip(list(range(len(lessons))), lessons)] if i])
 
 
 @app.route('/schedule', methods=['POST'])
